@@ -126,6 +126,48 @@ Filtering
    items = {"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}
    upsetplot(items, min_degree=2, show_counts=True)
 
+Stacked bars
+------------
+
+``stack_by`` splits every bar by a group per element. Here genes are split
+into coding and non-coding.
+
+===============  ======  ==========  ====
+Intersection     coding  non-coding  Size
+===============  ======  ==========  ====
+liver only       g1      g2          2
+brain only       g6      g5          2
+liver and brain  g3, g4              2
+===============  ======  ==========  ====
+
+Set sizes: liver = 3 coding + 1 non-coding, brain = 3 coding + 1
+non-coding.
+
+.. plot::
+
+   from simpleupset import upsetplot
+
+   genes = {"liver": ["g1", "g2", "g3", "g4"], "brain": ["g3", "g4", "g5", "g6"]}
+   kind = {"g1": "coding", "g2": "non-coding", "g3": "coding",
+           "g4": "coding", "g5": "non-coding", "g6": "coding"}
+   upsetplot(genes, stack_by=kind, show_counts=True)
+
+``stack_by`` also takes a function (``stack_by=lambda gene: ...``), a list
+with one group per row (for :func:`~simpleupset.from_memberships`), or a
+column name for a legacy DataFrame. ``stack_colors`` takes a dict
+``{group: colour}``, which also sets the order, a list of colours, or a
+colormap name:
+
+.. plot::
+
+   from simpleupset import upsetplot
+
+   genes = {"liver": ["g1", "g2", "g3", "g4"], "brain": ["g3", "g4", "g5", "g6"]}
+   kind = {"g1": "coding", "g2": "non-coding", "g3": "coding",
+           "g4": "coding", "g5": "non-coding", "g6": "coding"}
+   upsetplot(genes, stack_by=kind, orientation="vertical",
+             stack_colors={"non-coding": "#bbbbbb", "coding": "#2b6cb0"})
+
 Weighted memberships
 --------------------
 
