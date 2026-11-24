@@ -2,9 +2,11 @@
 
 ## Goal
 
-A small UpSet plot package with a simple interface. It should be a drop-in
-replacement for the legacy [UpSetPlot](https://github.com/jnothman/UpSetPlot)
-package, and also accept a plain dict of sets or lists.
+A small UpSet plot package with a simple interface. The main input is a
+plain dict of sets or lists. Users of the legacy
+[UpSetPlot](https://github.com/jnothman/UpSetPlot) package should be able to
+switch quickly: accept its input formats and argument names. Full API
+compatibility beyond that is not a goal.
 
 ## Stack
 
@@ -29,9 +31,10 @@ package, and also accept a plain dict of sets or lists.
   duck typing and is never imported by the library; it is a dev/docs
   dependency only.
 - Bars show exclusive intersections (elements in exactly that combination).
-- Known gaps against the legacy package: the `from_*` helpers return
-  `UpSetData`, not pandas objects; `add_catplot`, `style_subsets` and
-  `query` are missing.
+- Intentional differences from the legacy package: the `from_*` helpers
+  return `UpSetData`, not pandas objects. Not planned: `generate_*` sample
+  data helpers, `query` (use `UpSet(...).subsets` / `.totals`), `add_catplot`.
+- Planned: stacked bars (v0.2). Maybe: `style_subsets`.
 
 ## Layout
 
