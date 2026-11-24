@@ -189,3 +189,16 @@ def test_from_indicators_dataframe():
     pd = pytest.importorskip("pandas")
     df = pd.DataFrame({"a": [True, False], "b": [True, True]})
     assert sizes(from_indicators(df).subsets()) == {frozenset("ab"): 1, frozenset("b"): 1}
+
+
+def test_dict_of_lists_input():
+    items = {"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}
+    data = from_contents(items)
+    assert sizes(data.subsets()) == {
+        frozenset("a"): 1,  # 1
+        frozenset("ab"): 2,  # 2, 3
+        frozenset("ac"): 1,  # 4
+        frozenset("bc"): 2,  # 5, 21
+        frozenset("b"): 1,  # 19
+        frozenset("c"): 1,  # 30
+    }

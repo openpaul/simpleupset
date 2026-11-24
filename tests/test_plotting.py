@@ -137,3 +137,9 @@ def test_saves_png(tmp_path):
     out = tmp_path / "upset.png"
     fig.savefig(out)
     assert out.stat().st_size > 0
+
+
+def test_plot_dict_of_lists():
+    items = {"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}
+    axes = plot(items, sort_by="cardinality")
+    assert sorted(bar_heights(axes["intersections"]), reverse=True) == [2, 2, 1, 1, 1, 1]
