@@ -61,3 +61,13 @@ def test_legacy_series():
         frozenset({"cat2"}): 2,
     }
     assert upset.totals == {"cat1": 8, "cat2": 5}
+
+
+def test_non_string_categories():
+    upset = UpSet({2020: ["a", "b", "c"], 2021: ["b", "c", "d"]})
+    assert {frozenset(s.categories): s.size for s in upset.subsets} == {
+        frozenset({2020}): 1,
+        frozenset({2020, 2021}): 2,
+        frozenset({2021}): 1,
+    }
+    assert upset.totals == {2020: 3, 2021: 3}

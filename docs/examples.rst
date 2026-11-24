@@ -52,6 +52,30 @@ Set sizes: b = 5, a = 4, c = 4.
    items = {"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}
    upsetplot(items, sort_by="cardinality", show_counts=True)
 
+Non-string category names
+-------------------------
+
+Category names can be any hashable value (int, float, tuple, ...). They are
+kept as given in ``totals`` and ``subsets`` and drawn with ``str()``. Two
+names that would get the same label, such as ``1`` and ``"1"``, raise
+``ValueError``.
+
+============  ========  ====
+Intersection  Elements  Size
+============  ========  ====
+2020 only     a         1
+2020, 2021    b, c      2
+2021 only     d         1
+============  ========  ====
+
+Set sizes: 2020 = 3, 2021 = 3.
+
+.. plot::
+
+   from simpleupset import upsetplot
+
+   upsetplot({2020: ["a", "b", "c"], 2021: ["b", "c", "d"]}, show_counts=True)
+
 Nested sets with percentages
 ----------------------------
 

@@ -157,3 +157,10 @@ def test_upsetplot_is_main_name_and_plot_is_alias():
     assert simpleupset.plot is simpleupset.upsetplot
     axes = upsetplot(CONTENTS)
     assert set(axes) == {"matrix", "intersections", "totals", "shading"}
+
+
+def test_int_categories_labels_and_totals():
+    upset = UpSet({10: [1, 2, 3], 20: [3, 4]})
+    assert upset.totals == {10: 3, 20: 2}
+    axes = upset.plot()
+    assert [t.get_text() for t in axes["matrix"].get_yticklabels()] == ["10", "20"]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Hashable
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -94,7 +95,7 @@ class UpSet:
             min_degree=min_degree,
             max_degree=max_degree,
         )
-        self.totals: dict[str, float] = upset_data.category_totals()
+        self.totals: dict[Hashable, float] = upset_data.category_totals()
         self._grand_total = float(upset_data.weights.sum())
 
         self._horizontal = orientation == "horizontal"
@@ -125,7 +126,7 @@ class UpSet:
 
     def _label_elements(self) -> float:
         """Room for category labels, in matrix cells."""
-        longest = max((len(c) for c in self.data.categories), default=0)
+        longest = max((len(c) for c in self.data.labels), default=0)
         fontsize = plt.rcParams["ytick.labelsize"]
         if isinstance(fontsize, str):
             fontsize = plt.rcParams["font.size"]
@@ -196,12 +197,12 @@ class UpSet:
         if self._horizontal:
             ax.set_xlim(*sub_lim)
             ax.set_ylim(*cat_lim)
-            ax.set_yticks(range(n_cat), self.data.categories)
+            ax.set_yticks(range(n_cat), self.data.labels)
             ax.set_xticks([])
         else:
             ax.set_xlim(*cat_lim[::-1])
             ax.set_ylim(*sub_lim[::-1])
-            ax.set_xticks(range(n_cat), self.data.categories, rotation=90)
+            ax.set_xticks(range(n_cat), self.data.labels, rotation=90)
             ax.xaxis.tick_top()
             ax.set_yticks([])
         ax.tick_params(length=0)

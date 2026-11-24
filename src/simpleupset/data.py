@@ -8,7 +8,7 @@ package are accepted through duck typing, without importing pandas.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Hashable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -31,7 +31,7 @@ _SORT_CATEGORIES_BY = ("cardinality", "-cardinality", "input", "-input", None)
 class Subset:
     """One exclusive intersection: elements in exactly ``categories``."""
 
-    categories: frozenset[str]
+    categories: frozenset[Hashable]
     membership: tuple[bool, ...]
     size: float
     count: int
@@ -48,7 +48,11 @@ class UpSetData:
     Attributes
     ----------
     categories:
-        Category names, in input order.
+        Category names, in input order. Any hashable value works (str, int,
+        float, tuple, ...); names are kept as given. Values that compare
+        equal, such as ``1``, ``1.0`` and ``True``, are the same category, as
+        in a dict. Two categories must not share a label (``str(name)``),
+        so ``1`` and ``"1"`` together raise ``ValueError``.
     membership:
         ``(n_rows, n_categories)`` boolean array.
     weights:
@@ -56,19 +60,38 @@ class UpSetData:
         subsets should be sized by element count.
     """
 
-    categories: list[str]
+    categories: list[Hashable]
     membership: np.ndarray
     weights: np.ndarray = field(default=None)  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
-        self.categories = [str(c) for c in self.categories]
+        self.categories = list(self.categories)
+        for c in self.categories:
+            try:
+                hash(c)
+            except TypeError:
+                raise TypeError(
+                    f"category names must be hashable, got {type(c).__name__}: {c!r}"
+                ) from None
         m = np.asarray(self.membership, dtype=bool)
         if m.ndim != 2 or m.shape[1] != len(self.categories):
             raise ValueError(
                 f"membership must have shape (n, {len(self.categories)}), got {m.shape}"
             )
-        if len(set(self.categories)) != len(self.categories):
-            raise ValueError("category names must be unique")
+        seen: dict[Hashable, Hashable] = {}
+        for c in self.categories:
+            if c in seen:
+                also = "" if repr(seen[c]) == repr(c) else f" (equal to {seen[c]!r})"
+                raise ValueError(f"duplicate category {c!r}{also}")
+            seen[c] = c
+        by_label: dict[str, Hashable] = {}
+        for c in self.categories:
+            other = by_label.setdefault(str(c), c)
+            if other is not c:
+                raise ValueError(
+                    f"categories {other!r} and {c!r} would both be labelled "
+                    f"{str(c)!r}; rename one"
+                )
         self.membership = m
         if self.weights is None:
             self.weights = np.ones(m.shape[0], dtype=float)
@@ -82,7 +105,12 @@ class UpSetData:
     def n_categories(self) -> int:
         return len(self.categories)
 
-    def category_totals(self) -> dict[str, float]:
+    @property
+    def labels(self) -> list[str]:
+        """Category labels as drawn on the plot: ``str(name)``."""
+        return [str(c) for c in self.categories]
+
+    def category_totals(self) -> dict[Hashable, float]:
         """Summed weight of every row belonging to each category."""
         totals = self.weights @ self.membership
         return dict(zip(self.categories, totals.tolist()))

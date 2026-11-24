@@ -122,7 +122,7 @@ def test_sort_categories(contents):
 def test_upsetdata_validation():
     with pytest.raises(ValueError, match="shape"):
         UpSetData(["a", "b"], np.zeros((3, 1), dtype=bool))
-    with pytest.raises(ValueError, match="unique"):
+    with pytest.raises(ValueError, match="duplicate category 'a'$"):
         UpSetData(["a", "a"], np.zeros((3, 2), dtype=bool))
     with pytest.raises(ValueError, match="weights"):
         UpSetData(["a"], np.zeros((3, 1), dtype=bool), [1, 2])
@@ -202,3 +202,49 @@ def test_dict_of_lists_input():
         frozenset("b"): 1,  # 19
         frozenset("c"): 1,  # 30
     }
+
+
+# ------------------------------------------------------- category name types
+
+
+def test_int_categories_round_trip():
+    data = from_contents({1: [1, 2], 2: [2, 3]})
+    assert data.categories == [1, 2]
+    assert data.category_totals() == {1: 2, 2: 2}
+    assert sizes(data.subsets()) == {frozenset({1}): 1, frozenset({2}): 1, frozenset({1, 2}): 1}
+    assert data.labels == ["1", "2"]
+
+
+@pytest.mark.parametrize("names", [[0.5, 1.5], [("x", 1), ("y", 2)], [None, "b"]])
+def test_other_hashable_categories(names):
+    data = from_contents({names[0]: [1, 2], names[1]: [2]})
+    assert data.categories == names
+    assert data.labels == [str(n) for n in names]
+
+
+def test_mixed_int_and_str_with_distinct_labels():
+    data = from_contents({1: [1], "b": [1, 2]})
+    assert data.category_totals() == {1: 1, "b": 2}
+
+
+def test_same_label_raises():
+    with pytest.raises(ValueError, match="both be labelled '1'"):
+        from_contents({1: [1], "1": [2]})
+
+
+def test_two_nans_raise_label_clash():
+    with pytest.raises(ValueError, match="labelled 'nan'"):
+        from_contents({float("nan"): [1], float("nan"): [2]})
+
+
+def test_equal_values_are_one_category():
+    # 1, 1.0 and True compare equal, so they are one category, as dict keys are
+    data = from_memberships([[1], [1.0], [True]])
+    assert data.categories == [1]
+    with pytest.raises(ValueError, match=r"duplicate category 1\.0 \(equal to 1\)"):
+        UpSetData([1, 1.0], np.zeros((1, 2), dtype=bool))
+
+
+def test_unhashable_category_raises():
+    with pytest.raises(TypeError, match="hashable"):
+        UpSetData([["a"]], np.zeros((1, 1), dtype=bool))
