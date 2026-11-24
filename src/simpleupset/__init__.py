@@ -7,11 +7,14 @@ from simpleupset.data import (
     from_indicators,
     from_memberships,
 )
+from simpleupset.plotting import UpSet, plot
 
 __all__ = [
     "Subset",
+    "UpSet",
     "UpSetData",
     "from_contents",
     "from_indicators",
     "from_memberships",
+    "plot",
 ]
