@@ -27,12 +27,44 @@ def test_plot_uses_given_figure():
     assert axes["matrix"].figure is fig
 
 
-def test_element_size_sets_figure_size():
+def test_element_size_sets_cell_size():
     fig = plt.figure()
-    plot(CONTENTS, fig=fig, element_size=40)
-    w, h = fig.get_size_inches()
-    assert h == pytest.approx((6 + 3) * 40 / 72)
-    assert w > 5 * 40 / 72
+    axes = plot(CONTENTS, fig=fig, element_size=40)
+    w_pt, h_pt = fig.get_size_inches() * 72
+    matrix = axes["matrix"].get_position()
+    # 5 subsets x 3 categories, each cell 40pt, regardless of figure margins
+    assert matrix.width * w_pt == pytest.approx(5 * 40)
+    assert matrix.height * h_pt == pytest.approx(3 * 40)
+    inter = axes["intersections"].get_position()
+    assert inter.height * h_pt == pytest.approx(6 * 40)
+
+
+LONG_LABELS = {
+    "selected subset": range(0, 40),
+    "connected components": range(30, 60),
+    "WWWWWWWWWWWW": range(5, 12),
+}
+
+
+@pytest.mark.parametrize("orientation", ["horizontal", "vertical"])
+@pytest.mark.parametrize("fontsize", [8, 10, 16])
+@pytest.mark.parametrize("element_size", [32, None])
+def test_long_labels_do_not_overlap_totals(orientation, fontsize, element_size):
+    with plt.rc_context({"font.size": fontsize}):
+        fig = plt.figure(figsize=(8, 6))
+        axes = plot(LONG_LABELS, fig=fig, orientation=orientation,
+                    element_size=element_size)
+        renderer = fig.canvas.get_renderer()
+        matrix, totals = axes["matrix"], axes["totals"]
+        tick_labels = (matrix.get_yticklabels() if orientation == "horizontal"
+                       else matrix.get_xticklabels())
+        bars = totals.get_window_extent(renderer)
+        for label in tick_labels:
+            box = label.get_window_extent(renderer)
+            if orientation == "horizontal":
+                assert box.x0 >= bars.x1, label.get_text()
+            else:
+                assert box.y1 <= bars.y0, label.get_text()
 
 
 def test_element_size_none_keeps_figure_size():

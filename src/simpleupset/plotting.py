@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.figure import Figure
+from matplotlib.font_manager import FontProperties
+from matplotlib.textpath import TextToPath
 from matplotlib.ticker import MaxNLocator
 
 from simpleupset.data import Subset, UpSetData, to_upset_data
@@ -124,27 +126,56 @@ class UpSet:
 
     # ----------------------------------------------------------------- layout
 
-    def _label_elements(self) -> float:
-        """Room for category labels, in matrix cells."""
-        longest = max((len(c) for c in self.data.labels), default=0)
-        fontsize = plt.rcParams["ytick.labelsize"]
-        if isinstance(fontsize, str):
-            fontsize = plt.rcParams["font.size"]
-        cell = self._element_size or 32
-        return longest * 0.6 * fontsize / cell + 0.5
+    def _label_extent(self) -> float:
+        """Room for the category labels in points: widest label plus padding.
+
+        Measured from the actual glyphs, so it holds for any font, font size
+        and label length (rotated labels in vertical mode need the same
+        extent, upwards).
+        """
+        axis = "y" if self._horizontal else "x"
+        prop = FontProperties(size=plt.rcParams[f"{axis}tick.labelsize"])
+        text_to_path = TextToPath()
+        widest = max(
+            (text_to_path.get_text_width_height_descent(label, prop, ismath=False)[0]
+             for label in self.data.labels),
+            default=0.0,
+        )
+        return widest + plt.rcParams[f"{axis}tick.major.pad"] + 6  # gap to totals
 
     def _make_axes(self, fig: Figure) -> dict[str, Any]:
         n_sub = max(len(self.subsets), 1)
         n_cat = max(self.data.n_categories, 1)
-        labels = self._label_elements()
-        # long axis: [totals, labels, matrix]; short axis: [intersections, matrix]
-        long_ratios = [self._totals_elems, labels, n_sub]
-        short_ratios = [self._inter_elems, n_cat]
+        label_pt = self._label_extent()
+        long_cells = self._totals_elems + n_sub
+        short_cells = self._inter_elems + n_cat
+
+        # the grid fills the figure minus its subplot margins
+        pars = fig.subplotpars
+        frac_w, frac_h = pars.right - pars.left, pars.top - pars.bottom
+        frac_long, frac_short = (frac_w, frac_h) if self._horizontal else (frac_h, frac_w)
 
         if self._element_size is not None:
-            size_in = self._element_size / 72
-            w, h = sum(long_ratios) * size_in, sum(short_ratios) * size_in
-            fig.set_size_inches(*((w, h) if self._horizontal else (h, w)))
+            cell = float(self._element_size)
+            long_in = (long_cells * cell + label_pt) / frac_long / 72
+            short_in = short_cells * cell / frac_short / 72
+            fig.set_size_inches(
+                *((long_in, short_in) if self._horizontal else (short_in, long_in))
+            )
+        else:
+            # fit the given figure: largest square cell that leaves room for labels
+            w_pt, h_pt = fig.get_size_inches() * 72
+            long_pt, short_pt = (w_pt, h_pt) if self._horizontal else (h_pt, w_pt)
+            cell = min(
+                (long_pt * frac_long - label_pt) / long_cells,
+                short_pt * frac_short / short_cells,
+            )
+            cell = max(cell, 1.0)
+        self._cell = cell
+
+        # long axis: [totals, labels, matrix]; short axis: [intersections, matrix]
+        long_ratios = [self._totals_elems * cell, label_pt, n_sub * cell]
+        short_ratios = [self._inter_elems * cell, n_cat * cell]
 
         if self._horizontal:
             gs = fig.add_gridspec(
@@ -178,7 +209,7 @@ class UpSet:
 
         grid = np.array([s.membership for s in self.subsets], dtype=bool).reshape(n_sub, n_cat)
         sub_idx, cat_idx = np.meshgrid(np.arange(n_sub), np.arange(n_cat), indexing="ij")
-        dot_size = (0.5 * (self._element_size or 32)) ** 2
+        dot_size = (0.5 * self._cell) ** 2
 
         x, y = self._xy(sub_idx[~grid], cat_idx[~grid])
         ax.scatter(x, y, s=dot_size, c=[self._other_dots_color], zorder=2, lw=0)
