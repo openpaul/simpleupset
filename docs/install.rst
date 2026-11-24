@@ -10,7 +10,7 @@ uv
 
 .. code-block:: bash
 
-   uv add git+https://github.com/openpaul/simpleupset --tag v0.1.2
+   uv add git+https://github.com/openpaul/simpleupset --tag v0.1.3
 
 or in ``pyproject.toml``:
 
@@ -20,25 +20,25 @@ or in ``pyproject.toml``:
    dependencies = ["simpleupset"]
 
    [tool.uv.sources]
-   simpleupset = { git = "https://github.com/openpaul/simpleupset", tag = "v0.1.2" }
+   simpleupset = { git = "https://github.com/openpaul/simpleupset", tag = "v0.1.3" }
 
 pixi
 ----
 
 .. code-block:: bash
 
-   pixi add --pypi "simpleupset @ git+https://github.com/openpaul/simpleupset@v0.1.2"
+   pixi add --pypi "simpleupset @ git+https://github.com/openpaul/simpleupset@v0.1.3"
 
 or in ``pixi.toml``:
 
 .. code-block:: toml
 
    [pypi-dependencies]
-   simpleupset = { git = "https://github.com/openpaul/simpleupset", tag = "v0.1.2" }
+   simpleupset = { git = "https://github.com/openpaul/simpleupset", tag = "v0.1.3" }
 
 pip
 ---
 
 .. code-block:: bash
 
-   pip install "git+https://github.com/openpaul/simpleupset@v0.1.2"
+   pip install "git+https://github.com/openpaul/simpleupset@v0.1.3"
