@@ -25,8 +25,8 @@ Legacy UpSetPlot inputs (a pandas Series or DataFrame with a boolean MultiIndex)
 Pin a release tag:
 
 ```bash
-uv add git+https://github.com/openpaul/simpleupset --tag v0.1.3
-pixi add --pypi "simpleupset @ git+https://github.com/openpaul/simpleupset@v0.1.3"
+uv add git+https://github.com/openpaul/simpleupset --tag v0.1.4
+pixi add --pypi "simpleupset @ git+https://github.com/openpaul/simpleupset@v0.1.4"
 ```
 
 ## Docs
