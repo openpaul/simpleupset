@@ -132,7 +132,8 @@ def test_bars_are_stacked_with_legend():
     assert [a + b for a, b in zip(case, control)] == [2, 3, 1, 2, 1, 2]  # a, ab, ac, bc, b, c (first appearance)
     # second segment starts where the first ends
     assert [p.get_y() for p in inter.containers[1]] == case
-    assert [t.get_text() for t in inter.get_legend().get_texts()] == ["case", "control"]
+    legend = axes["legend"].get_legend()
+    assert [t.get_text() for t in legend.get_texts()] == ["case", "control"]
     assert len(axes["totals"].containers) == 2
 
 
@@ -166,10 +167,25 @@ def test_legend_title_from_column_name():
     index = pd.MultiIndex.from_tuples([(True,), (True,)], names=["a"])
     df = pd.DataFrame({"sex": ["f", "m"]}, index=index)
     axes = upsetplot(df, stack_by="sex")
-    assert axes["intersections"].get_legend().get_title().get_text() == "sex"
+    assert axes["legend"].get_legend().get_title().get_text() == "sex"
 
 
 def test_no_legend_without_stacking():
     axes = upsetplot(ITEMS)
-    assert axes["intersections"].get_legend() is None
+    assert "legend" not in axes
     assert np.isclose(sum(p.get_height() for p in axes["intersections"].patches), 11)
+
+
+@pytest.mark.parametrize("orientation", ["horizontal", "vertical"])
+def test_legend_does_not_overlap_bars(orientation):
+    import matplotlib.pyplot as plt
+
+    # all bars full height: nowhere inside the bar axes would be free
+    genes = {"liver": ["g1", "g2", "g3", "g4"], "brain": ["g3", "g4", "g5", "g6"]}
+    kind = {"g1": "c", "g2": "n", "g3": "c", "g4": "c", "g5": "n", "g6": "c"}
+    axes = upsetplot(genes, stack_by=kind, orientation=orientation)
+    renderer = plt.gcf().canvas.get_renderer()
+    legend = axes["legend"].get_legend().get_window_extent(renderer)
+    for name in ("intersections", "totals", "matrix"):
+        box = axes[name].get_window_extent(renderer)
+        assert not legend.overlaps(box), name

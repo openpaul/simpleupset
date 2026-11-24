@@ -78,3 +78,22 @@ def test_precomputed_counts():
         [["a"], ["b"], ["c"], ["a", "b"], ["a", "b", "c"]], data=[10, 5, 4, 3, 2]
     )
     check(data, {"a": 10, "b": 5, "c": 4, "ab": 3, "abc": 2}, {"a": 15, "b": 10, "c": 6})
+
+
+def test_stacked_bars():
+    genes = {"liver": ["g1", "g2", "g3", "g4"], "brain": ["g3", "g4", "g5", "g6"]}
+    kind = {"g1": "coding", "g2": "non-coding", "g3": "coding",
+            "g4": "coding", "g5": "non-coding", "g6": "coding"}
+    upset = UpSet(genes, stack_by=kind)
+    st = upset.stacked
+    assert st.groups == ["coding", "non-coding"]
+    split = {frozenset(s.categories): st.subsets[i].tolist() for i, s in enumerate(upset.subsets)}
+    assert split == {
+        frozenset({"liver"}): [1, 1],
+        frozenset({"brain"}): [1, 1],
+        frozenset({"liver", "brain"}): [2, 0],
+    }
+    assert dict(zip(upset.data.categories, st.totals.tolist())) == {
+        "liver": [3, 1],
+        "brain": [3, 1],
+    }

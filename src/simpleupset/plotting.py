@@ -154,7 +154,8 @@ class UpSet:
 
     def plot(self, fig: Figure | None = None) -> dict[str, Any]:
         """Draw the plot. Returns axes keyed ``matrix``, ``intersections``,
-        ``totals`` and ``shading`` (as in upsetplot)."""
+        ``totals`` and ``shading`` (as in upsetplot), plus ``legend`` when
+        stacking."""
         if fig is None:
             fig = plt.figure()
         axes = self._make_axes(fig)
@@ -162,10 +163,15 @@ class UpSet:
         self._plot_intersections(axes["intersections"])
         self._plot_totals(axes["totals"])
         if self.stacked is not None and self.stacked.groups:
-            axes["intersections"].legend(
-                title=self._stack_title, fontsize="small", title_fontsize="small",
-                frameon=False, loc="best",
+            handles, labels = axes["intersections"].get_legend_handles_labels()
+            legend_ax = fig.add_subplot(self._corner)
+            legend_ax.axis("off")
+            legend_ax.legend(
+                handles, labels, title=self._stack_title, fontsize="small",
+                title_fontsize="small", frameon=False,
+                loc="upper left" if self._horizontal else "upper right",
             )
+            axes["legend"] = legend_ax
         return axes
 
     # ----------------------------------------------------------------- layout
@@ -238,6 +244,8 @@ class UpSet:
             matrix = fig.add_subplot(gs[2, 0])
             inter = fig.add_subplot(gs[2, 1], sharey=matrix)
             totals = fig.add_subplot(gs[0, 0], sharex=matrix)
+        # the empty corner (above totals and labels / right of totals) holds the legend
+        self._corner = gs[0, :2] if self._horizontal else gs[:2, 1]
         return {"matrix": matrix, "intersections": inter, "totals": totals, "shading": matrix}
 
     def _xy(self, sub_pos: np.ndarray, cat_pos: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
