@@ -63,7 +63,11 @@ Image regression tests (`tests/test_images.py`) compare renders to
 `uv run pytest tests/test_images.py --regen-images`, look at every changed
 baseline before committing, and commit them with the code change. Failures
 write the render and a diff to `tests/image_results/` (CI uploads them as an
-artifact).
+artifact). Baselines are tied to the matplotlib minor version in
+`tests/baseline/matplotlib-version.txt` (text rendering differs between
+versions); on other versions the tests skip, except in the CI job with
+`REQUIRE_IMAGE_TESTS=1` (Python 3.12), where a mismatch fails. Regenerate
+under Python 3.12 when the locked matplotlib changes.
 
 ## Commits
 

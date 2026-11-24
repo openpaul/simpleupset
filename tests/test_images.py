@@ -6,10 +6,17 @@ After an intended visual change, regenerate and review the baselines:
     git diff --stat tests/baseline
 
 On failure the rendered image and a diff are written to tests/image_results/.
+
+Text rendering changes between matplotlib minor versions, so baselines are
+tied to the version that made them (tests/baseline/matplotlib-version.txt).
+On another version the tests skip, or fail if REQUIRE_IMAGE_TESTS is set
+(CI sets it on one job so image coverage cannot silently disappear).
 """
 
+import os
 from pathlib import Path
 
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.testing
 import pytest
@@ -20,6 +27,8 @@ from simpleupset import from_memberships, upsetplot
 HERE = Path(__file__).parent
 BASELINE = HERE / "baseline"
 RESULTS = HERE / "image_results"
+VERSION_FILE = BASELINE / "matplotlib-version.txt"
+MPL_VERSION = ".".join(matplotlib.__version__.split(".")[:2])
 
 # RMS over 0-255 pixel values. An identical render is 0; a faint shading change
 # (alpha 0.05 -> 0.07) is ~1.4; a 4% wider bar is ~16.
@@ -58,8 +67,26 @@ CASES = {
 }
 
 
+def _check_baseline_version(regen: bool) -> None:
+    if regen:
+        BASELINE.mkdir(exist_ok=True)
+        VERSION_FILE.write_text(MPL_VERSION + "\n")
+        return
+    made_with = VERSION_FILE.read_text().strip() if VERSION_FILE.exists() else "unknown"
+    if made_with != MPL_VERSION:
+        message = (
+            f"baselines were made with matplotlib {made_with}, installed is "
+            f"{MPL_VERSION}; regenerate with --regen-images on the new version"
+        )
+        if os.environ.get("REQUIRE_IMAGE_TESTS"):
+            pytest.fail(message, pytrace=False)
+        pytest.skip(message)
+
+
 @pytest.mark.parametrize("name", CASES)
 def test_image(name, request):
+    regen = request.config.getoption("--regen-images")
+    _check_baseline_version(regen)
     with plt.rc_context():
         matplotlib.testing.set_font_settings_for_testing()
         CASES[name]()
@@ -69,8 +96,7 @@ def test_image(name, request):
         fig.savefig(actual, dpi=72)
 
     expected = BASELINE / f"{name}.png"
-    if request.config.getoption("--regen-images"):
-        BASELINE.mkdir(exist_ok=True)
+    if regen:
         expected.write_bytes(actual.read_bytes())
         actual.unlink()
         pytest.skip(f"baseline regenerated: {expected.relative_to(HERE.parent)}")
