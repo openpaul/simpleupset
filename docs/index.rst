@@ -4,6 +4,9 @@ simpleupset
 UpSet plots for Python with a small API: pass a dict of sets (or lists),
 get a matplotlib figure.
 
+Source code, issues and releases: `github.com/openpaul/simpleupset
+<https://github.com/openpaul/simpleupset>`_.
+
 .. code-block:: python
 
    from simpleupset import upsetplot
