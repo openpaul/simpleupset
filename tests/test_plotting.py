@@ -143,3 +143,9 @@ def test_plot_dict_of_lists():
     items = {"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}
     axes = plot(items, sort_by="cardinality")
     assert sorted(bar_heights(axes["intersections"]), reverse=True) == [2, 2, 1, 1, 1, 1]
+
+
+def test_integer_ticks_for_counts():
+    axes = plot({"a": {1, 2}, "b": {2}})
+    ticks = axes["intersections"].get_yticks()
+    assert all(float(t).is_integer() for t in ticks)

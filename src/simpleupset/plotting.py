@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.figure import Figure
+from matplotlib.ticker import MaxNLocator
 
 from simpleupset.data import Subset, UpSetData, to_upset_data
 
@@ -243,10 +244,13 @@ class UpSet:
         self._label_bars(ax, bars, sizes, along_x=self._horizontal)
 
     def _label_bars(self, ax: Any, bars: Any, sizes: list[float], along_x: bool) -> None:
+        if all(float(v).is_integer() for v in sizes):
+            (ax.xaxis if along_x else ax.yaxis).set_major_locator(MaxNLocator(nbins="auto", integer=True))
         if not (self._show_counts or self._show_percentages):
             return
         labels = [self._format_label(v) for v in sizes]
-        ax.bar_label(bars, labels, padding=2, fontsize="small")
+        both = self._show_counts and self._show_percentages
+        ax.bar_label(bars, labels, padding=2, fontsize="x-small" if both else "small")
         # leave room for the labels beyond the longest bar
         if sizes:
             lim = ax.get_xlim() if along_x else ax.get_ylim()
