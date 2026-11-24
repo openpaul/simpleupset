@@ -4,7 +4,10 @@ API reference
 Plotting
 --------
 
-.. autofunction:: simpleupset.plot
+.. autofunction:: simpleupset.upsetplot
+
+``simpleupset.plot`` is an alias of ``upsetplot``, matching the legacy
+``upsetplot.plot``.
 
 .. autoclass:: simpleupset.UpSet
    :members: plot

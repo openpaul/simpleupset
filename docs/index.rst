@@ -6,13 +6,13 @@ get a matplotlib figure.
 
 .. code-block:: python
 
-   from simpleupset import plot
+   from simpleupset import upsetplot
 
-   plot({"a": [1, 2, 3, 4], "b": [2, 3, 5], "c": [4, 5, 6]})
+   upsetplot({"a": [1, 2, 3, 4], "b": [2, 3, 5], "c": [4, 5, 6]})
 
 The API follows the legacy `UpSetPlot <https://github.com/jnothman/UpSetPlot>`_
-package, so ``UpSet(data, ...).plot()`` and ``plot(data, ...)`` accept the
-same arguments and return the same dict of axes.
+package: ``UpSet(data, ...).plot()`` takes the same arguments and returns the
+same dict of axes, and ``plot`` is kept as an alias of ``upsetplot``.
 
 .. toctree::
    :maxdepth: 2

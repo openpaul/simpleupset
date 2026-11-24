@@ -12,7 +12,7 @@ from matplotlib.ticker import MaxNLocator
 
 from simpleupset.data import Subset, UpSetData, to_upset_data
 
-__all__ = ["UpSet", "plot"]
+__all__ = ["UpSet", "plot", "upsetplot"]
 
 
 class UpSet:
@@ -273,12 +273,16 @@ class UpSet:
         return "\n".join(parts)
 
 
-def plot(data: Any, fig: Figure | None = None, **kwargs: Any) -> dict[str, Any]:
+def upsetplot(data: Any, fig: Figure | None = None, **kwargs: Any) -> dict[str, Any]:
     """Draw an UpSet plot. ``kwargs`` are passed to :class:`UpSet`.
 
-    >>> plot({"a": {1, 2, 3}, "b": {2, 3, 4}, "c": {3, 5}})  # doctest: +SKIP
+    >>> upsetplot({"a": [1, 2, 3], "b": [2, 3, 4], "c": [3, 5]})  # doctest: +SKIP
     """
     return UpSet(data, **kwargs).plot(fig=fig)
+
+
+plot = upsetplot
+"""Alias of :func:`upsetplot`, matching the legacy ``upsetplot.plot``."""
 
 
 def _resolve_color(color: Any, facecolor: Any) -> tuple[float, float, float, float]:

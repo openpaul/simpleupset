@@ -7,7 +7,7 @@ from simpleupset.data import (
     from_indicators,
     from_memberships,
 )
-from simpleupset.plotting import UpSet, plot
+from simpleupset.plotting import UpSet, plot, upsetplot
 
 __all__ = [
     "Subset",
@@ -17,4 +17,5 @@ __all__ = [
     "from_indicators",
     "from_memberships",
     "plot",
+    "upsetplot",
 ]

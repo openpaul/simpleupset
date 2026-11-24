@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from simpleupset import UpSet, from_memberships, plot
+from simpleupset import UpSet, from_memberships, plot, upsetplot
 
 CONTENTS = {"a": {1, 2, 3, 4}, "b": {3, 4, 5}, "c": {4, 6}}
 
@@ -149,3 +149,11 @@ def test_integer_ticks_for_counts():
     axes = plot({"a": {1, 2}, "b": {2}})
     ticks = axes["intersections"].get_yticks()
     assert all(float(t).is_integer() for t in ticks)
+
+
+def test_upsetplot_is_main_name_and_plot_is_alias():
+    import simpleupset
+
+    assert simpleupset.plot is simpleupset.upsetplot
+    axes = upsetplot(CONTENTS)
+    assert set(axes) == {"matrix", "intersections", "totals", "shading"}

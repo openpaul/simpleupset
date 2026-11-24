@@ -23,9 +23,9 @@ Set sizes: a = 3, b = 2.
 
 .. plot::
 
-   from simpleupset import plot
+   from simpleupset import upsetplot
 
-   plot({"a": {1, 2, 3}, "b": {3, 4}}, show_counts=True)
+   upsetplot({"a": {1, 2, 3}, "b": {3, 4}}, show_counts=True)
 
 Dict of lists
 -------------
@@ -47,10 +47,10 @@ Set sizes: b = 5, a = 4, c = 4.
 
 .. plot::
 
-   from simpleupset import plot
+   from simpleupset import upsetplot
 
    items = {"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}
-   plot(items, sort_by="cardinality", show_counts=True)
+   upsetplot(items, sort_by="cardinality", show_counts=True)
 
 Nested sets with percentages
 ----------------------------
@@ -71,10 +71,10 @@ Set sizes: all = 6, even = 3, small = 2.
 
 .. plot::
 
-   from simpleupset import plot
+   from simpleupset import upsetplot
 
    sets = {"all": [1, 2, 3, 4, 5, 6], "even": [2, 4, 6], "small": [1, 2]}
-   plot(sets, show_counts=True, show_percentages=True)
+   upsetplot(sets, show_counts=True, show_percentages=True)
 
 Vertical orientation
 --------------------
@@ -83,10 +83,10 @@ Same data as *Dict of lists*, rotated.
 
 .. plot::
 
-   from simpleupset import plot
+   from simpleupset import upsetplot
 
    items = {"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}
-   plot(items, orientation="vertical", sort_by="cardinality", show_counts=True)
+   upsetplot(items, orientation="vertical", sort_by="cardinality", show_counts=True)
 
 Filtering
 ---------
@@ -97,10 +97,10 @@ Filtering
 
 .. plot::
 
-   from simpleupset import plot
+   from simpleupset import upsetplot
 
    items = {"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}
-   plot(items, min_degree=2, show_counts=True)
+   upsetplot(items, min_degree=2, show_counts=True)
 
 Weighted memberships
 --------------------
@@ -120,13 +120,13 @@ Set sizes: x = 4, y = 6.
 
 .. plot::
 
-   from simpleupset import from_memberships, plot
+   from simpleupset import from_memberships, upsetplot
 
    data = from_memberships(
        [["x"], ["x", "y"], ["y"], ["x"]],
        data=[1.5, 2.0, 4.0, 0.5],
    )
-   plot(data, show_counts=True)
+   upsetplot(data, show_counts=True)
 
 Legacy UpSetPlot input
 ----------------------

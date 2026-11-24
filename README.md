@@ -2,7 +2,7 @@
 
 A small Python package for UpSet plots.
 
-As the [UpSetPlot](https://github.com/jnothman/UpSetPlot) package seems to be abandoned, I asked Claude to write a quick and simple replacement. The API follows UpSetPlot, so `UpSet(data, ...).plot()` and `plot(data, ...)` take the same arguments, and it also accepts a plain dict of sets or lists.
+As the [UpSetPlot](https://github.com/jnothman/UpSetPlot) package seems to be abandoned, I asked Claude to write a quick and simple replacement. The API follows UpSetPlot (`UpSet(data, ...).plot()` takes the same arguments, and `plot` is kept as an alias of `upsetplot`), and it also accepts a plain dict of sets or lists.
 
 This is AI-first code: the problem is simple enough that I don't think it is worth writing by hand, and current models are more than up to the task.
 
@@ -12,9 +12,9 @@ This is an early version. Below 1.0.0 the API is not stable and may change. Plea
 
 ```python
 import matplotlib.pyplot as plt
-from simpleupset import plot
+from simpleupset import upsetplot
 
-plot({"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}, show_counts=True)
+upsetplot({"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}, show_counts=True)
 plt.show()
 ```
 
