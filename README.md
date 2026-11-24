@@ -1,8 +1,44 @@
-# Simple Upset
-Simple upset is a python package to quickly make an upset plot.
+# simpleupset
 
-At the [UpSetPlot package](https://github.com/jnothman/UpSetPlot) seems to be abandoned I asked claude to make a quick ans imple implementation.
+A small Python package for UpSet plots.
 
-This is an early version. As long as the version is below 1.0.0 the API is not stable and may change. Please report any issues you find.
+As the [UpSetPlot](https://github.com/jnothman/UpSetPlot) package seems to be abandoned, I asked Claude to write a quick and simple replacement. The API follows UpSetPlot, so `UpSet(data, ...).plot()` and `plot(data, ...)` take the same arguments, and it also accepts a plain dict of sets or lists.
 
-This is AI first code. Meaning this is so simple, I don't think it is worth doing it by hand and current models are more than up to the task.
+This is AI-first code: the problem is simple enough that I don't think it is worth writing by hand, and current models are more than up to the task.
+
+This is an early version. Below 1.0.0 the API is not stable and may change. Please report any issues you find.
+
+## Usage
+
+```python
+import matplotlib.pyplot as plt
+from simpleupset import plot
+
+plot({"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}, show_counts=True)
+plt.show()
+```
+
+Legacy UpSetPlot inputs (a pandas Series or DataFrame with a boolean MultiIndex) also work. pandas is not a dependency.
+
+## Install
+
+Pin a release tag:
+
+```bash
+uv add git+https://github.com/openpaul/simpleupset --tag v0.1.0
+pixi add --pypi "simpleupset @ git+https://github.com/openpaul/simpleupset@v0.1.0"
+```
+
+## Docs
+
+<https://openpaul.github.io/simpleupset/>
+
+The docs include examples small enough to check by hand: each lists its input and the expected intersections next to the generated plot.
+
+## Development
+
+```bash
+uv sync
+uv run pytest
+uv run --group docs sphinx-build docs docs/_build/html
+```
