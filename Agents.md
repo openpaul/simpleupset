@@ -72,6 +72,9 @@ versions); on other versions the tests skip, except in the CI job with
 `REQUIRE_IMAGE_TESTS=1` (Python 3.12), where a mismatch fails. Regenerate
 under Python 3.12 when the locked matplotlib changes.
 
+The README/docs showcase image `docs/_static/readme-example.png` is made by
+`uv run python docs/readme_example.py`; rerun it after visual changes.
+
 ## Commits
 
 - Atomic commits, authored as `claude <claude@paulsaary.de>`.
