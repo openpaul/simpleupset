@@ -152,6 +152,40 @@ Set sizes: x = 4, y = 6.
    )
    upsetplot(data, show_counts=True)
 
+Precomputed counts
+------------------
+
+If you only have the counts per intersection, not the elements, pass one
+list of sets per intersection with its count as the weight.
+
+The counts must be **exclusive**: elements in exactly those sets and no
+others. Counts from Venn tools or papers are often **inclusive**
+(``|a ∩ b|``, including elements that are also in c). Convert them first: if
+``|a ∩ b| = 5`` and 2 of those are also in c, the exclusive "a and b" count is
+5 − 2 = 3.
+
+=============  ====
+Intersection   Size
+=============  ====
+a only         10
+b only         5
+c only         4
+a and b        3
+a, b and c     2
+=============  ====
+
+Set sizes: a = 10 + 3 + 2 = 15, b = 5 + 3 + 2 = 10, c = 4 + 2 = 6.
+
+.. plot::
+
+   from simpleupset import from_memberships, upsetplot
+
+   data = from_memberships(
+       [["a"], ["b"], ["c"], ["a", "b"], ["a", "b", "c"]],
+       data=[10, 5, 4, 3, 2],
+   )
+   upsetplot(data, show_counts=True)
+
 Legacy UpSetPlot input
 ----------------------
 

@@ -71,3 +71,10 @@ def test_non_string_categories():
         frozenset({2021}): 1,
     }
     assert upset.totals == {2020: 3, 2021: 3}
+
+
+def test_precomputed_counts():
+    data = from_memberships(
+        [["a"], ["b"], ["c"], ["a", "b"], ["a", "b", "c"]], data=[10, 5, 4, 3, 2]
+    )
+    check(data, {"a": 10, "b": 5, "c": 4, "ab": 3, "abc": 2}, {"a": 15, "b": 10, "c": 6})
