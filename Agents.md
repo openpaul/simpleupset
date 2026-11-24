@@ -1,13 +1,72 @@
-- atomic commits as claude@paulsaary.de  claude
-- goal of the repois a upset plot repo that has a simple interface
-- uses polars internally if anything (better use numpy or even python generics)
-- API should stay compatvile to legacy upset plots but also accept dictionary of sets.
-- drawing done with matplotlib
-- unit tests using pytest
-- ci for github actions
-- uv as package manager
-- release regularly: after user-facing changes (features, fixes, API changes) bump the version and tag it
-  - `uv version --bump patch` (use `minor` for breaking API changes while below 1.0.0)
-  - update the tag in the install examples (README.md, docs/install.rst) to the new version
-  - commit as "Release vX.Y.Z", then `git tag -a vX.Y.Z -m "vX.Y.Z"` on that commit
-  - the tag must match the version in pyproject.toml; never move or delete existing tags
+# Agent instructions
+
+## Goal
+
+A small UpSet plot package with a simple interface. It should be a drop-in
+replacement for the legacy [UpSetPlot](https://github.com/jnothman/UpSetPlot)
+package, and also accept a plain dict of sets or lists.
+
+## Stack
+
+- uv as package manager (`uv sync`, `uv add`, `uv run`).
+- Runtime dependencies: numpy and matplotlib only. Prefer numpy or plain
+  Python. If a dataframe library is ever needed internally, use polars, not
+  pandas.
+- Drawing with matplotlib.
+- Tests with pytest.
+- CI with GitHub Actions.
+- Docs with Sphinx and the Furo theme, deployed to GitHub Pages.
+
+## API
+
+- `upsetplot(data, fig=None, **kwargs)` is the main entry point. `plot` is an
+  alias for drop-in use (`from upsetplot import plot` becomes
+  `from simpleupset import plot`). Keep both.
+- `UpSet(data, ...).plot(fig)` keeps the legacy argument names and returns the
+  legacy axes dict (`matrix`, `intersections`, `totals`, `shading`).
+- Accepted inputs: dict of `{category: iterable}`, `UpSetData`, and the legacy
+  pandas Series/DataFrame with a boolean MultiIndex. pandas is detected by
+  duck typing and is never imported by the library; it is a dev/docs
+  dependency only.
+- Bars show exclusive intersections (elements in exactly that combination).
+- Known gaps against the legacy package: the `from_*` helpers return
+  `UpSetData`, not pandas objects; `add_catplot`, `style_subsets` and
+  `query` are missing.
+
+## Layout
+
+- `src/simpleupset/data.py`: input normalisation and intersection
+  aggregation.
+- `src/simpleupset/plotting.py`: `UpSet` and `upsetplot`/`plot`.
+- `tests/`: pytest. `tests/test_docs_examples.py` checks the hand-written
+  expected tables in `docs/examples.rst`; update both together.
+- `docs/`: Sphinx sources. Examples use matplotlib's `plot` directive.
+
+## Commands
+
+```bash
+uv run pytest
+rm -rf docs/_build && uv run --group docs sphinx-build -W docs docs/_build/html
+```
+
+The plot directive caches images, so do a clean rebuild after changing
+plotting code. Look at the rendered PNGs when changing how plots look.
+
+## Commits
+
+- Atomic commits, authored as `claude <claude@paulsaary.de>`.
+- The agent environment may have no ssh; if `git push` fails, ask the user
+  to push.
+
+## Releases
+
+Release after user-facing changes (features, fixes, API changes):
+
+1. `uv version --bump patch` (use `minor` for breaking API changes while
+   below 1.0.0).
+2. Update the tag in the install examples (`README.md`, `docs/install.rst`).
+3. Commit as "Release vX.Y.Z", then `git tag -a vX.Y.Z -m "vX.Y.Z"` on that
+   commit.
+
+The tag must match the version in `pyproject.toml`. Never move or delete
+existing tags.
