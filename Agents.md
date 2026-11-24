@@ -31,6 +31,9 @@ compatibility beyond that is not a goal.
   duck typing and is never imported by the library; it is a dev/docs
   dependency only.
 - Bars show exclusive intersections (elements in exactly that combination).
+- Category names can be any hashable and are kept as given; `str(name)` is
+  only used for labels. Equal values (`1`, `1.0`, `True`) are one category,
+  as with dict keys. Names that would share a label (`1` and `"1"`) raise.
 - Intentional differences from the legacy package: the `from_*` helpers
   return `UpSetData`, not pandas objects. Not planned: `generate_*` sample
   data helpers, `query` (use `UpSet(...).subsets` / `.totals`), `add_catplot`.
