@@ -6,3 +6,8 @@
 - unit tests using pytest
 - ci for github actions
 - uv as package manager
+- release regularly: after user-facing changes (features, fixes, API changes) bump the version and tag it
+  - `uv version --bump patch` (use `minor` for breaking API changes while below 1.0.0)
+  - update the tag in the install examples (README.md, docs/install.rst) to the new version
+  - commit as "Release vX.Y.Z", then `git tag -a vX.Y.Z -m "vX.Y.Z"` on that commit
+  - the tag must match the version in pyproject.toml; never move or delete existing tags
