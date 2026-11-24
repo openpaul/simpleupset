@@ -23,6 +23,9 @@ __all__ = [
     "from_memberships",
     "from_indicators",
     "to_upset_data",
+    "resolve_groups",
+    "StackedSizes",
+    "stacked_sizes",
 ]
 
 #: Most intersections ``include_empty_subsets=True`` may generate (2**16).
@@ -63,11 +66,15 @@ class UpSetData:
     weights:
         ``(n_rows,)`` float array; the value summed per subset. All ones when
         subsets should be sized by element count.
+    elements:
+        One identity per row: the element itself for :func:`from_contents`,
+        otherwise the row position. Used to look up ``stack_by`` groups.
     """
 
     categories: list[Hashable]
     membership: np.ndarray
     weights: np.ndarray = field(default=None)  # type: ignore[assignment]
+    elements: list[Any] = field(default=None)  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         self.categories = list(self.categories)
@@ -105,6 +112,14 @@ class UpSetData:
             if w.shape != (m.shape[0],):
                 raise ValueError(f"weights must have shape ({m.shape[0]},), got {w.shape}")
             self.weights = w
+        if self.elements is None:
+            self.elements = list(range(m.shape[0]))
+        else:
+            self.elements = list(self.elements)
+            if len(self.elements) != m.shape[0]:
+                raise ValueError(
+                    f"elements must have length {m.shape[0]}, got {len(self.elements)}"
+                )
 
     @property
     def n_categories(self) -> int:
@@ -199,7 +214,10 @@ class UpSetData:
         elif sort_categories_by == "-input":
             idx.reverse()
         return UpSetData(
-            [self.categories[i] for i in idx], self.membership[:, idx], self.weights.copy()
+            [self.categories[i] for i in idx],
+            self.membership[:, idx],
+            self.weights.copy(),
+            self.elements,
         )
 
 
@@ -246,7 +264,7 @@ def from_contents(contents: Mapping[Any, Iterable[Any]]) -> UpSetData:
                 rows.append([False] * len(categories))
             rows[i][j] = True
     membership = np.array(rows, dtype=bool).reshape(len(rows), len(categories))
-    return UpSetData(categories, membership)
+    return UpSetData(categories, membership, elements=list(index))
 
 
 def from_memberships(
@@ -341,7 +359,7 @@ def to_upset_data(
     """
     if isinstance(data, UpSetData):
         if subset_size == "count":
-            return UpSetData(data.categories, data.membership)
+            return UpSetData(data.categories, data.membership, elements=data.elements)
         return data
     if isinstance(data, Mapping):
         if sum_over is not None:
@@ -353,3 +371,102 @@ def to_upset_data(
         "data must be a dict of sets, UpSetData, or a pandas Series/DataFrame with "
         f"a boolean index; got {type(data).__name__}"
     )
+
+
+# --------------------------------------------------------------------------- #
+# stacking
+# --------------------------------------------------------------------------- #
+
+
+def resolve_groups(data: UpSetData, stack_by: Any, source: Any = None) -> list[Hashable]:
+    """One group per row of ``data``.
+
+    ``stack_by`` is a mapping ``{element: group}``, a callable
+    ``element -> group``, a sequence with one group per row, or (only when
+    ``source`` is a DataFrame) the name of one of its columns.
+    """
+    n = data.membership.shape[0]
+    if isinstance(stack_by, str):
+        if source is not None and hasattr(source, "columns") and stack_by in source.columns:
+            groups = list(source[stack_by])
+        else:
+            raise TypeError(
+                f"stack_by={stack_by!r} is a column name, which needs a DataFrame "
+                "with that column; pass a dict {element: group}, a function, or a "
+                "list with one group per element instead"
+            )
+    elif isinstance(stack_by, Mapping):
+        missing = [e for e in data.elements if e not in stack_by]
+        if missing:
+            shown = ", ".join(map(repr, missing[:5])) + (", ..." if len(missing) > 5 else "")
+            raise ValueError(f"stack_by has no group for {len(missing)} element(s): {shown}")
+        groups = [stack_by[e] for e in data.elements]
+    elif callable(stack_by):
+        groups = [stack_by(e) for e in data.elements]
+    else:
+        groups = list(stack_by)
+        if len(groups) != n:
+            raise ValueError(f"stack_by must have one group per row ({n}), got {len(groups)}")
+    for g in groups:
+        try:
+            hash(g)
+        except TypeError:
+            raise TypeError(f"stack_by groups must be hashable, got {g!r}") from None
+    return groups
+
+
+@dataclass
+class StackedSizes:
+    """Subset and category sizes split by group.
+
+    ``subsets[i, k]`` is the size of subset ``i`` within group ``groups[k]``;
+    ``totals[j, k]`` the same for category ``j``.
+    """
+
+    groups: list[Hashable]
+    subsets: np.ndarray
+    totals: np.ndarray
+
+
+def stacked_sizes(
+    data: UpSetData,
+    subsets: Sequence[Subset],
+    row_groups: Sequence[Hashable],
+    order: Sequence[Hashable] | None = None,
+) -> StackedSizes:
+    """Break the sizes of ``subsets`` and of each category down by group.
+
+    Groups are ordered by ``order`` if given (it must contain every group),
+    otherwise sorted, or in order of first appearance if they cannot be
+    sorted.
+    """
+    present = list(dict.fromkeys(row_groups))
+    if order is not None:
+        order = list(order)
+        missing = [g for g in present if g not in order]
+        if missing:
+            raise ValueError(f"no colour/order given for group(s): {missing!r}")
+        groups = [g for g in order if g in set(present)] if present else order
+    else:
+        try:
+            groups = sorted(present)
+        except TypeError:
+            groups = present
+    code = {g: k for k, g in enumerate(groups)}
+    codes = np.array([code[g] for g in row_groups], dtype=int).reshape(-1)
+
+    n_rows, n_groups = data.membership.shape[0], len(groups)
+    per_group = np.zeros((n_rows, n_groups))
+    if n_rows:
+        per_group[np.arange(n_rows), codes] = data.weights
+
+    totals = data.membership.T.astype(float) @ per_group
+    row_of = {}
+    for i, row in enumerate(map(tuple, data.membership.tolist())):
+        row_of.setdefault(row, []).append(i)
+    sub = np.zeros((len(subsets), n_groups))
+    for i, s in enumerate(subsets):
+        rows = row_of.get(tuple(s.membership))
+        if rows:
+            sub[i] = per_group[rows].sum(axis=0)
+    return StackedSizes(groups, sub, totals)

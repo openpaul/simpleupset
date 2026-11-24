@@ -35,6 +35,7 @@ MPL_VERSION = ".".join(matplotlib.__version__.split(".")[:2])
 TOLERANCE = 1.0
 
 THREE = {"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}
+STACK_ITEMS = {"a": [1, 2, 3, 4, 6, 7], "b": [2, 3, 5, 6, 19, 21], "c": [4, 5, 21, 30, 31]}
 LONG_LABELS = {
     "selected subset": range(0, 40),
     "connected components": range(30, 60),
@@ -63,6 +64,16 @@ CASES = {
     ),
     "empty_subsets": lambda: upsetplot(
         {"a": [1], "b": [2], "c": [1, 2]}, include_empty_subsets=True
+    ),
+    "stacked": lambda: upsetplot(
+        STACK_ITEMS, stack_by=lambda e: "odd" if e % 2 else "even", show_counts=True
+    ),
+    "stacked_vertical": lambda: upsetplot(
+        STACK_ITEMS,
+        orientation="vertical",
+        stack_by=lambda e: ["low", "mid", "high"][e % 3],
+        stack_colors={"low": "#9ecae1", "mid": "#4292c6", "high": "#08519c"},
+        show_counts=True,
     ),
 }
 

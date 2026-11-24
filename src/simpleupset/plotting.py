@@ -3,18 +3,25 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Hashable
+from collections.abc import Hashable, Mapping
 from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import to_rgba
+from matplotlib.colors import Colormap, ListedColormap, to_rgba
 from matplotlib.figure import Figure
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextToPath
 from matplotlib.ticker import MaxNLocator
 
-from simpleupset.data import Subset, UpSetData, to_upset_data
+from simpleupset.data import (
+    StackedSizes,
+    Subset,
+    UpSetData,
+    resolve_groups,
+    stacked_sizes,
+    to_upset_data,
+)
 
 __all__ = ["UpSet", "plot", "upsetplot"]
 
@@ -63,6 +70,15 @@ class UpSet:
         Annotate bars. ``True`` or a format string (``"{:,}"`` or ``"%d"``).
     include_empty_subsets:
         Show all ``2**n`` intersections, even empty ones.
+    stack_by:
+        Split every bar by a group, with a legend. A dict
+        ``{element: group}``, a function ``element -> group``, a list with one
+        group per row (e.g. for :func:`from_memberships`), or the name of a
+        column when ``data`` is a DataFrame.
+    stack_colors:
+        Colours for the groups: a dict ``{group: colour}`` (also sets the
+        order), a list of colours, or a colormap name. Defaults to
+        matplotlib's colour cycle.
     """
 
     def __init__(
@@ -87,6 +103,8 @@ class UpSet:
         show_counts: bool | str = "",
         show_percentages: bool | str = False,
         include_empty_subsets: bool = False,
+        stack_by: Any = None,
+        stack_colors: Any = None,
     ) -> None:
         if orientation not in ("horizontal", "vertical"):
             raise ValueError(f"orientation must be 'horizontal' or 'vertical', got {orientation!r}")
@@ -123,6 +141,15 @@ class UpSet:
         self._show_counts = show_counts
         self._show_percentages = show_percentages
 
+        self.stacked: StackedSizes | None = None
+        self._stack_colors: list[Any] = []
+        self._stack_title = stack_by if isinstance(stack_by, str) else None
+        if stack_by is not None:
+            row_groups = resolve_groups(upset_data, stack_by, source=data)
+            order = list(stack_colors) if isinstance(stack_colors, Mapping) else None
+            self.stacked = stacked_sizes(upset_data, self.subsets, row_groups, order)
+            self._stack_colors = _resolve_stack_colors(stack_colors, self.stacked.groups)
+
     # ------------------------------------------------------------------ public
 
     def plot(self, fig: Figure | None = None) -> dict[str, Any]:
@@ -134,6 +161,11 @@ class UpSet:
         self._plot_matrix(axes["matrix"])
         self._plot_intersections(axes["intersections"])
         self._plot_totals(axes["totals"])
+        if self.stacked is not None and self.stacked.groups:
+            axes["intersections"].legend(
+                title=self._stack_title, fontsize="small", title_fontsize="small",
+                frameon=False, loc="best",
+            )
         return axes
 
     # ----------------------------------------------------------------- layout
@@ -252,17 +284,40 @@ class UpSet:
         for spine in ax.spines.values():
             spine.set_visible(False)
 
+    def _draw_bars(self, ax: Any, segments: np.ndarray, sideways: bool) -> Any:
+        """Draw one bar per row of ``segments`` (stacked if it has several
+        columns). Returns the container of the top segment, whose ends are the
+        bar totals even where that segment is empty."""
+        pos = np.arange(segments.shape[0])
+        if self.stacked is None:
+            colors, names = [self._facecolor], [None]
+        else:
+            colors, names = self._stack_colors, [str(g) for g in self.stacked.groups]
+        base = np.zeros(segments.shape[0])
+        container = None
+        for k in range(segments.shape[1]):
+            if sideways:
+                container = ax.barh(pos, segments[:, k], height=0.5, left=base,
+                                    color=colors[k], label=names[k], zorder=10)
+            else:
+                container = ax.bar(pos, segments[:, k], width=0.5, bottom=base,
+                                   color=colors[k], label=names[k], zorder=10)
+            base = base + segments[:, k]
+        if container is None:  # no groups at all: draw nothing, keep the axes
+            container = (ax.barh if sideways else ax.bar)(pos, base, zorder=10)
+        return container
+
     def _plot_intersections(self, ax: Any) -> None:
         sizes = [s.size for s in self.subsets]
-        pos = np.arange(len(sizes))
+        segments = (np.array(sizes, dtype=float).reshape(-1, 1)
+                    if self.stacked is None else self.stacked.subsets)
+        bars = self._draw_bars(ax, segments, sideways=not self._horizontal)
         if self._horizontal:
-            bars = ax.bar(pos, sizes, width=0.5, color=self._facecolor, zorder=10)
             ax.set_ylabel("Intersection size")
             ax.tick_params(axis="x", bottom=False, labelbottom=False)
             _hide_spines(ax, "top", "right", "bottom")
             ax.yaxis.grid(True, lw=0.5, color="#dddddd")
         else:
-            bars = ax.barh(pos, sizes, height=0.5, color=self._facecolor, zorder=10)
             ax.set_xlabel("Intersection size")
             ax.tick_params(axis="y", left=False, labelleft=False)
             _hide_spines(ax, "top", "right", "left")
@@ -272,15 +327,15 @@ class UpSet:
 
     def _plot_totals(self, ax: Any) -> None:
         sizes = [self.totals[c] for c in self.data.categories]
-        pos = np.arange(len(sizes))
+        segments = (np.array(sizes, dtype=float).reshape(-1, 1)
+                    if self.stacked is None else self.stacked.totals)
+        bars = self._draw_bars(ax, segments, sideways=self._horizontal)
         if self._horizontal:
-            bars = ax.barh(pos, sizes, height=0.5, color=self._facecolor, zorder=10)
             ax.invert_xaxis()  # bars grow leftwards, away from the matrix
             ax.tick_params(axis="y", left=False, labelleft=False)
             _hide_spines(ax, "top", "left", "right")
             ax.xaxis.grid(True, lw=0.5, color="#dddddd")
         else:
-            bars = ax.bar(pos, sizes, width=0.5, color=self._facecolor, zorder=10)
             ax.tick_params(axis="x", bottom=False, labelbottom=False)
             _hide_spines(ax, "top", "right", "bottom")
             ax.yaxis.grid(True, lw=0.5, color="#dddddd")
@@ -327,6 +382,24 @@ def upsetplot(data: Any, fig: Figure | None = None, **kwargs: Any) -> dict[str, 
 
 plot = upsetplot
 """Alias of :func:`upsetplot`, matching the legacy ``upsetplot.plot``."""
+
+
+def _resolve_stack_colors(stack_colors: Any, groups: list[Hashable]) -> list[Any]:
+    n = len(groups)
+    if stack_colors is None:
+        cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
+        return [cycle[k % len(cycle)] for k in range(n)]
+    if isinstance(stack_colors, Mapping):
+        return [stack_colors[g] for g in groups]
+    if isinstance(stack_colors, (str, Colormap)):
+        cmap = plt.get_cmap(stack_colors)
+        if isinstance(cmap, ListedColormap) and cmap.N <= 20:  # qualitative: take in turn
+            return [cmap(k % cmap.N) for k in range(n)]
+        return [cmap(k / max(n - 1, 1)) for k in range(n)]
+    colors = list(stack_colors)
+    if not colors:
+        raise ValueError("stack_colors is empty")
+    return [colors[k % len(colors)] for k in range(n)]
 
 
 def _resolve_color(color: Any, facecolor: Any) -> tuple[float, float, float, float]:
