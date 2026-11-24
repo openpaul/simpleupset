@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Hashable
 from typing import Any
 
@@ -16,6 +17,10 @@ from matplotlib.ticker import MaxNLocator
 from simpleupset.data import Subset, UpSetData, to_upset_data
 
 __all__ = ["UpSet", "plot", "upsetplot"]
+
+#: Above this many intersections the plot warns: at the default cell size
+#: the figure gets very wide and matplotlib may refuse to save it.
+MAX_SUBSETS_WITHOUT_WARNING = 200
 
 
 class UpSet:
@@ -97,6 +102,13 @@ class UpSet:
             min_degree=min_degree,
             max_degree=max_degree,
         )
+        if len(self.subsets) > MAX_SUBSETS_WITHOUT_WARNING:
+            warnings.warn(
+                f"{len(self.subsets):,} intersections to draw; the plot will be very "
+                "large. Filter with min_subset_size, max_degree or similar.",
+                UserWarning,
+                stacklevel=2,
+            )
         self.totals: dict[Hashable, float] = upset_data.category_totals()
         self._grand_total = float(upset_data.weights.sum())
 

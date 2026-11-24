@@ -196,3 +196,21 @@ def test_int_categories_labels_and_totals():
     assert upset.totals == {10: 3, 20: 2}
     axes = upset.plot()
     assert [t.get_text() for t in axes["matrix"].get_yticklabels()] == ["10", "20"]
+
+
+def test_warns_for_huge_number_of_intersections():
+    # every element in its own pair of categories -> many distinct intersections
+    contents = {f"c{i}": set() for i in range(25)}
+    element = 0
+    for i in range(25):
+        for j in range(i + 1, 25):
+            contents[f"c{i}"].add(element)
+            contents[f"c{j}"].add(element)
+            element += 1
+    with pytest.warns(UserWarning, match="300 intersections"):
+        UpSet(contents)
+
+
+def test_no_warning_for_normal_plots(recwarn):
+    UpSet(CONTENTS)
+    assert not [w for w in recwarn if issubclass(w.category, UserWarning)]

@@ -248,3 +248,32 @@ def test_equal_values_are_one_category():
 def test_unhashable_category_raises():
     with pytest.raises(TypeError, match="hashable"):
         UpSetData([["a"]], np.zeros((1, 1), dtype=bool))
+
+
+# ------------------------------------------------------------------- guards
+
+
+def many_categories(n):
+    return from_contents({f"c{i}": {i} for i in range(n)})
+
+
+def test_include_empty_subsets_guard():
+    with pytest.raises(ValueError, match="1,048,576 intersections"):
+        many_categories(20).subsets(include_empty_subsets=True)
+
+
+def test_include_empty_subsets_degree_bounds_keep_it_small():
+    # 30 categories: 2**30 overall, but only 1 + 30 + 435 up to degree 2
+    subs = many_categories(30).subsets(include_empty_subsets=True, max_degree=2)
+    assert len(subs) == 1 + 30 + 435
+    subs = many_categories(30).subsets(
+        include_empty_subsets=True, min_degree=29, max_degree=30
+    )
+    assert len(subs) == 30 + 1
+
+
+def test_include_empty_subsets_matches_degree_filter():
+    data = from_contents({"a": {1}, "b": {2}, "c": {1, 2}})
+    subs = data.subsets(include_empty_subsets=True, min_degree=1, max_degree=2)
+    assert {s.degree for s in subs} == {1, 2}
+    assert len(subs) == 3 + 3

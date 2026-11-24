@@ -8,6 +8,8 @@ package are accepted through duck typing, without importing pandas.
 
 from __future__ import annotations
 
+import itertools
+import math
 from collections.abc import Hashable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -22,6 +24,9 @@ __all__ = [
     "from_indicators",
     "to_upset_data",
 ]
+
+#: Most intersections ``include_empty_subsets=True`` may generate (2**16).
+MAX_EMPTY_SUBSETS = 65_536
 
 _SORT_BY = ("cardinality", "-cardinality", "degree", "-degree", "input", "-input")
 _SORT_CATEGORIES_BY = ("cardinality", "-cardinality", "input", "-input", None)
@@ -141,12 +146,22 @@ class UpSetData:
             found = []
 
         if include_empty_subsets:
-            seen = {k for k, _, _ in found}
             n = self.n_categories
-            for code in range(2**n):
-                key = tuple(bool(code >> (n - 1 - j) & 1) for j in range(n))
-                if key not in seen:
-                    found.append((key, 0.0, 0))
+            lo = 0 if min_degree is None else max(min_degree, 0)
+            hi = n if max_degree is None else min(max_degree, n)
+            n_candidates = sum(math.comb(n, k) for k in range(lo, hi + 1))
+            if n_candidates > MAX_EMPTY_SUBSETS:
+                raise ValueError(
+                    f"include_empty_subsets=True with {n} categories means "
+                    f"{n_candidates:,} intersections (limit {MAX_EMPTY_SUBSETS:,}); "
+                    "narrow it with min_degree/max_degree or drop the option"
+                )
+            seen = {k for k, _, _ in found}
+            for k in range(lo, hi + 1):
+                for members in itertools.combinations(range(n), k):
+                    key = tuple(j in members for j in range(n))
+                    if key not in seen:
+                        found.append((key, 0.0, 0))
 
         result = [
             Subset(
