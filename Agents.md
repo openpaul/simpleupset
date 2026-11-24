@@ -37,7 +37,10 @@ compatibility beyond that is not a goal.
 - Intentional differences from the legacy package: the `from_*` helpers
   return `UpSetData`, not pandas objects. Not planned: `generate_*` sample
   data helpers, `query` (use `UpSet(...).subsets` / `.totals`), `add_catplot`.
-- Planned: stacked bars (v0.2). Maybe: `style_subsets`.
+- Stacked bars: `stack_by` (dict element->group, function, per-row list, or
+  DataFrame column) and `stack_colors`. Both bar charts are stacked; the
+  legend lives in its own axes in the empty grid corner.
+- Maybe later: `style_subsets`.
 
 ## Layout
 

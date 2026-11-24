@@ -18,6 +18,8 @@ upsetplot({"a": [1, 2, 3, 4], "b": [2, 3, 5, 19, 21], "c": [4, 5, 21, 30]}, show
 plt.show()
 ```
 
+Split bars by a group per element with `stack_by`, e.g. `upsetplot(items, stack_by={1: "case", 2: "control", ...})`.
+
 Jupyter shows the plot on its own; VS Code notebooks may need `plt.show()` too. In notebooks, end the line with `;` to hide the returned dict of axes.
 
 Legacy UpSetPlot inputs (a pandas Series or DataFrame with a boolean MultiIndex) also work. pandas is not a dependency.
