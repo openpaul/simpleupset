@@ -1,0 +1,8 @@
+- atomic commits as claude@paulsaary.de  claude
+- goal of the repois a upset plot repo that has a simple interface
+- uses polars internally if anything (better use numpy or even python generics)
+- API should stay compatvile to legacy upset plots but also accept dictionary of sets.
+- drawing done with matplotlib
+- unit tests using pytest
+- ci for github actions
+- uv as package manager
