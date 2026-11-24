@@ -42,3 +42,7 @@ uv sync
 uv run pytest
 uv run --group docs sphinx-build docs docs/_build/html
 ```
+
+## License
+
+Public domain ([Unlicense](LICENSE)). Use it for anything, no attribution needed. No code was taken from UpSetPlot; only its API is mirrored.
