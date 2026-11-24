@@ -4,6 +4,9 @@ simpleupset
 UpSet plots for Python with a small API: pass a dict of sets (or lists),
 get a matplotlib figure.
 
+.. image:: _static/readme-example.png
+   :alt: UpSet plot of which languages survey respondents use, stacked by role
+
 Source code, issues and releases: `github.com/openpaul/simpleupset
 <https://github.com/openpaul/simpleupset>`_.
 
