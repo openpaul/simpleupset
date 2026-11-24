@@ -58,6 +58,13 @@ rm -rf docs/_build && uv run --group docs sphinx-build -W docs docs/_build/html
 The plot directive caches images, so do a clean rebuild after changing
 plotting code. Look at the rendered PNGs when changing how plots look.
 
+Image regression tests (`tests/test_images.py`) compare renders to
+`tests/baseline/*.png`. After an intended visual change, run
+`uv run pytest tests/test_images.py --regen-images`, look at every changed
+baseline before committing, and commit them with the code change. Failures
+write the render and a diff to `tests/image_results/` (CI uploads them as an
+artifact).
+
 ## Commits
 
 - Atomic commits, authored as `claude <claude@paulsaary.de>`.
